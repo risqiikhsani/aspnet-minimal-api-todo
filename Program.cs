@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using MinimalApiTodoApi.Services;
 using MinimalApiTodoApi.Database;
+using MinimalApiTodoApi.Models;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -294,23 +295,34 @@ if (app.Environment.IsDevelopment())
 // }
 
 RouteGroupBuilder todoItems = app.MapGroup("/todoitems");
-todoItems.MapGet("/", async (ITodoService TodoService) =>
-    TypedResults.Ok(await TodoService.GetAllTodosAsync())
+todoItems.MapGet("/", async (ITodoService todoService) =>
+    {   
+        return TypedResults.Ok(await todoService.GetAllTodosAsync());
+    });     
+todoItems.MapGet("/complete", async (ITodoService todoService) =>
+    {
+        return TypedResults.Ok(await todoService.GetCompleteTodosAsync());
+    }
     );
-todoItems.MapGet("/complete", async (ITodoService TodoService) =>
-    TypedResults.Ok(await TodoService.GetCompleteTodosAsync())
+todoItems.MapGet("/{id}", async (int id, ITodoService todoService) =>
+    {
+        return TypedResults.Ok(await todoService.GetTodoByIdAsync(id));
+    }
     );
-todoItems.MapGet("/{id}", async (int id, ITodoService TodoService) =>
-    TypedResults.Ok(await TodoService.GetTodoByIdAsync(id))
-    );
-todoItems.MapPost("/", async (TodoItemDTO todoItemDTO, ITodoService TodoService) =>
-    TypedResults.Created($"/todoitems/{(await TodoService.CreateTodoAsync(todoItemDTO)).Id}", todoItemDTO)
-    );
-todoItems.MapPut("/{id}", async (int id, TodoItemDTO todoItemDTO, ITodoService TodoService) =>
-    TypedResults.Ok(await TodoService.UpdateTodoAsync(id, todoItemDTO))
-    );
-todoItems.MapDelete("/{id}", async (int id, ITodoService TodoService) =>
-    TypedResults.Ok(await TodoService.DeleteTodoAsync(id))
+todoItems.MapPost("/", async (TodoItemDTO todoItemDTO, ITodoService todoService) =>
+    {
+        var createdTodo = await todoService.CreateTodoAsync(todoItemDTO);
+        return TypedResults.Created($"/todoitems/{createdTodo.Id}", createdTodo);
+    });
+todoItems.MapPut("/{id}", async (int id, TodoItemDTO todoItemDTO, ITodoService todoService) =>
+    {
+        return TypedResults.Ok(await todoService.UpdateTodoAsync(id, todoItemDTO));
+    }
+);
+todoItems.MapDelete("/{id}", async (int id, ITodoService todoService) =>
+    {
+        return TypedResults.Ok(await todoService.DeleteTodoAsync(id));
+    }
     );
 
 app.Run();

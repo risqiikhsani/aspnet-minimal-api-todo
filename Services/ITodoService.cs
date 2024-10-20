@@ -1,3 +1,5 @@
+using MinimalApiTodoApi.Models;
+
 public interface ITodoService
 {
     Task<IEnumerable<TodoItemDTO>> GetAllTodosAsync();
