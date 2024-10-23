@@ -7,9 +7,9 @@ namespace MinimalApiTodoApi.Services;
 
 public class TodoService : ITodoService
 {
-    private readonly TodoDb _db;
+    private readonly AppDbContext _db;
 
-    public TodoService(TodoDb db)
+    public TodoService(AppDbContext db)
     {
         _db = db;
     }
@@ -30,12 +30,12 @@ public class TodoService : ITodoService
         return todo == null ? null : new TodoItemDTO(todo);
     }
 
-    public async Task<TodoItemDTO> CreateTodoAsync(TodoItemDTO todoItemDTO)
+    public async Task<TodoItemDTO> CreateTodoAsync(TodoItemDTO todoItemDto)
     {
         var todoItem = new Todo
         {
-            Name = todoItemDTO.Name,
-            IsComplete = todoItemDTO.IsComplete
+            Name = todoItemDto.Name,
+            IsComplete = todoItemDto.IsComplete
         };
 
         _db.Todos.Add(todoItem);
@@ -44,7 +44,7 @@ public class TodoService : ITodoService
         return new TodoItemDTO(todoItem);
     }
 
-    public async Task<bool> UpdateTodoAsync(int id, TodoItemDTO todoItemDTO)
+    public async Task<bool> UpdateTodoAsync(int id, TodoItemDTO todoItemDto)
     {
         var todo = await _db.Todos.FindAsync(id);
 
@@ -53,8 +53,8 @@ public class TodoService : ITodoService
             return false;
         }
 
-        todo.Name = todoItemDTO.Name;
-        todo.IsComplete = todoItemDTO.IsComplete;
+        todo.Name = todoItemDto.Name;
+        todo.IsComplete = todoItemDto.IsComplete;
 
         await _db.SaveChangesAsync();
 

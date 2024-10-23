@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/bismillah/Documents/code/.net/MinimalApiTodoApi/MinimalApiTodoApi.csproj": {}
+    "/home/bismillah/Documents/code/net/MinimalApiTodoApi/MinimalApiTodoApi.csproj": {}
   },
   "projects": {
-    "/home/bismillah/Documents/code/.net/MinimalApiTodoApi/MinimalApiTodoApi.csproj": {
+    "/home/bismillah/Documents/code/net/MinimalApiTodoApi/MinimalApiTodoApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/bismillah/Documents/code/.net/MinimalApiTodoApi/MinimalApiTodoApi.csproj",
+        "projectUniqueName": "/home/bismillah/Documents/code/net/MinimalApiTodoApi/MinimalApiTodoApi.csproj",
         "projectName": "MinimalApiTodoApi",
-        "projectPath": "/home/bismillah/Documents/code/.net/MinimalApiTodoApi/MinimalApiTodoApi.csproj",
+        "projectPath": "/home/bismillah/Documents/code/net/MinimalApiTodoApi/MinimalApiTodoApi.csproj",
         "packagesPath": "/home/bismillah/.nuget/packages/",
-        "outputPath": "/home/bismillah/Documents/code/.net/MinimalApiTodoApi/obj/",
+        "outputPath": "/home/bismillah/Documents/code/net/MinimalApiTodoApi/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/bismillah/.nuget/NuGet/NuGet.Config"
@@ -49,6 +49,24 @@
             "Microsoft.EntityFrameworkCore.InMemory": {
               "target": "Package",
               "version": "[8.0.10, )"
+            },
+            "Microsoft.EntityFrameworkCore.SQLite": {
+              "target": "Package",
+              "version": "[8.0.10, )"
+            },
+            "Microsoft.EntityFrameworkCore.SqlServer": {
+              "target": "Package",
+              "version": "[8.0.10, )"
+            },
+            "Microsoft.EntityFrameworkCore.Tools": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[8.0.10, )"
+            },
+            "Microsoft.VisualStudio.Web.CodeGeneration.Design": {
+              "target": "Package",
+              "version": "[8.0.5, )"
             },
             "NSwag.AspNetCore": {
               "target": "Package",

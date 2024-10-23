@@ -10,7 +10,7 @@ using MinimalApiTodoApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure JSON logging to the console.
-builder.Logging.AddJsonConsole();
+// builder.Logging.AddJsonConsole();
 
 
 // Add the memory cache services.
@@ -33,7 +33,9 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 
 
-builder.Services.AddDbContext<TodoDb>(opt => opt.UseInMemoryDatabase("TodoList"));
+// builder.Services.AddDbContext<TodoDb>(opt => opt.UseInMemoryDatabase("TodoList"));
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("Database")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -172,7 +174,6 @@ if (app.Environment.IsDevelopment())
 // todoItems.MapDelete("/{id}", DeleteTodo);
 
 
-
 // static async Task<IResult> GetAllTodos(TodoDb db)
 // {
 //     return TypedResults.Ok(await db.Todos.ToArrayAsync());
@@ -294,35 +295,28 @@ if (app.Environment.IsDevelopment())
 //     return TypedResults.NotFound();
 // }
 
-RouteGroupBuilder todoItems = app.MapGroup("/todoitems");
-todoItems.MapGet("/", async (ITodoService todoService) =>
-    {   
-        return TypedResults.Ok(await todoService.GetAllTodosAsync());
-    });     
-todoItems.MapGet("/complete", async (ITodoService todoService) =>
-    {
-        return TypedResults.Ok(await todoService.GetCompleteTodosAsync());
-    }
-    );
-todoItems.MapGet("/{id}", async (int id, ITodoService todoService) =>
-    {
-        return TypedResults.Ok(await todoService.GetTodoByIdAsync(id));
-    }
-    );
+RouteGroupBuilder todoItems = app.MapGroup("/todo-items");
+todoItems.MapGet("/",
+    async (ITodoService todoService) => { return TypedResults.Ok(await todoService.GetAllTodosAsync()); });
+todoItems.MapGet("/complete",
+    async (ITodoService todoService) => { return TypedResults.Ok(await todoService.GetCompleteTodosAsync()); }
+);
+todoItems.MapGet("/{id}",
+    async (int id, ITodoService todoService) => { return TypedResults.Ok(await todoService.GetTodoByIdAsync(id)); }
+);
 todoItems.MapPost("/", async (TodoItemDTO todoItemDTO, ITodoService todoService) =>
-    {
-        var createdTodo = await todoService.CreateTodoAsync(todoItemDTO);
-        return TypedResults.Created($"/todoitems/{createdTodo.Id}", createdTodo);
-    });
-todoItems.MapPut("/{id}", async (int id, TodoItemDTO todoItemDTO, ITodoService todoService) =>
+{
+    var createdTodo = await todoService.CreateTodoAsync(todoItemDTO);
+    return TypedResults.Created($"/todo-items/{createdTodo.Id}", createdTodo);
+});
+todoItems.MapPut("/{id}",
+    async (int id, TodoItemDTO todoItemDTO, ITodoService todoService) =>
     {
         return TypedResults.Ok(await todoService.UpdateTodoAsync(id, todoItemDTO));
     }
 );
-todoItems.MapDelete("/{id}", async (int id, ITodoService todoService) =>
-    {
-        return TypedResults.Ok(await todoService.DeleteTodoAsync(id));
-    }
-    );
+todoItems.MapDelete("/{id}",
+    async (int id, ITodoService todoService) => { return TypedResults.Ok(await todoService.DeleteTodoAsync(id)); }
+);
 
 app.Run();

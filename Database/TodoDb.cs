@@ -4,10 +4,10 @@ using MinimalApiTodoApi.Models;
 
 namespace MinimalApiTodoApi.Database;
 
-public class TodoDb : DbContext
+public class AppDbContext : DbContext
 {
-    public TodoDb(DbContextOptions<TodoDb> options)
+    public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options) { }
 
-    public DbSet<Todo> Todos => Set<Todo>();
+    public DbSet<Todo> Todos { get; set; } = default!;
 }
