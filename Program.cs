@@ -9,6 +9,7 @@ using MinimalApiTodoApi.Endpoints;
 using System.Text;
 using System.Security.Claims;
 using Microsoft.OpenApi.Models;
+using MinimalApiTodoApi.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,7 @@ builder.Services.AddMemoryCache();
 
 // Add a custom scoped service.
 builder.Services.AddScoped<ITodoService, TodoService>();
+builder.Services.AddTransient<AuthService>();
 
 
 builder.Services.AddCors();
@@ -30,13 +32,13 @@ builder.Services.AddAuthentication("Bearer")
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            // ValidateLifetime = true,
+            // ValidateIssuerSigningKey = true,
+            // ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            // ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AuthSettings.PrivateKey))
         };
     });
 
@@ -56,12 +58,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddEndpointsApiExplorer();
-// builder.Services.AddOpenApiDocument(config =>
-// {
-//     config.DocumentName = "TodoAPI";
-//     config.Title = "TodoAPI v1";
-//     config.Version = "v1";
-// });
+
 
 builder.Services.AddSwaggerGen(opt =>
 {
@@ -70,32 +67,38 @@ builder.Services.AddSwaggerGen(opt =>
         Version = "v1",
         Title = "ToDo API",
         Description = "An ASP.NET Core Web API for managing ToDo items",
-        
-    });
-    opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        In = ParameterLocation.Header,
-        Description = "Please enter token",
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        BearerFormat = "JWT",
-        Scheme = "bearer"
+
     });
 
-    opt.AddSecurityRequirement(new OpenApiSecurityRequirement
+    var securityScheme = new OpenApiSecurityScheme
+    {
+        Name = "JWT Authentication",
+        Description = "Enter your JWT token in this field",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    };
+
+    opt.AddSecurityDefinition("Bearer", securityScheme);
+
+    var securityRequirement = new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
             {
                 Reference = new OpenApiReference
                 {
-                    Type=ReferenceType.SecurityScheme,
-                    Id="Bearer"
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
                 }
             },
-            new string[]{}
+            new string[] {}
         }
-    });
+    };
+
+    opt.AddSecurityRequirement(securityRequirement);
+
 });
 
 
@@ -137,7 +140,12 @@ app.MapGet("/secret", (ClaimsPrincipal user) =>
 {
     return $"Hello {user.Identity?.Name}.";
 }).RequireAuthorization();
-;
+
+app.MapPost("/login", (AuthService authService, User user) =>
+{
+    var token = authService.GenerateToken(user);
+    return Results.Ok(new { Token = token });
+});
 
 //////////////////////////////////////////////////////////// STEP 1
 
