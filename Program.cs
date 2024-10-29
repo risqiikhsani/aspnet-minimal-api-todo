@@ -6,7 +6,9 @@ using MinimalApiTodoApi.Services;
 using MinimalApiTodoApi.Database;
 using MinimalApiTodoApi.Models;
 using MinimalApiTodoApi.Endpoints;
-
+using System.Text;
+using System.Security.Claims;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +25,21 @@ builder.Services.AddScoped<ITodoService, TodoService>();
 
 builder.Services.AddCors();
 // Requires Microsoft.AspNetCore.Authentication.JwtBearer
-builder.Services.AddAuthentication().AddJwtBearer();
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
+
 builder.Services.AddAuthorization();
 
 // Configure JSON serialization options globally
@@ -40,28 +56,88 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApiDocument(config =>
+// builder.Services.AddOpenApiDocument(config =>
+// {
+//     config.DocumentName = "TodoAPI";
+//     config.Title = "TodoAPI v1";
+//     config.Version = "v1";
+// });
+
+builder.Services.AddSwaggerGen(opt =>
 {
-    config.DocumentName = "TodoAPI";
-    config.Title = "TodoAPI v1";
-    config.Version = "v1";
+    opt.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "v1",
+        Title = "ToDo API",
+        Description = "An ASP.NET Core Web API for managing ToDo items",
+        
+    });
+    opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter token",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "bearer"
+    });
+
+    opt.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type=ReferenceType.SecurityScheme,
+                    Id="Bearer"
+                }
+            },
+            new string[]{}
+        }
+    });
 });
 
+
 var app = builder.Build();
-app.UseCors();
+OpenApiOperation AddBearerAuth(OpenApiOperation op)
+{
+    op.Security.Add(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "bearerAuth"
+                }
+            },
+            new string[] { }
+        }
+    });
+    return op;
+}
+
+
+app.UseCors(p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 app.UseAuthentication();
 app.UseAuthorization();
+
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseOpenApi();
-    app.UseSwaggerUi(config =>
-    {
-        config.DocumentTitle = "TodoAPI";
-        config.Path = "/swagger";
-        config.DocumentPath = "/swagger/{documentName}/swagger.json";
-        config.DocExpansion = "list";
-    });
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+
+
+
+app.MapGet("/secret", (ClaimsPrincipal user) =>
+{
+    return $"Hello {user.Identity?.Name}.";
+}).RequireAuthorization();
+;
 
 //////////////////////////////////////////////////////////// STEP 1
 

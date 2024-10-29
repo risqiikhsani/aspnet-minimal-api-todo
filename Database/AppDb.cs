@@ -10,4 +10,5 @@ public class AppDbContext : DbContext
         : base(options) { }
 
     public DbSet<Todo> Todos { get; set; } = default!;
+    // public DbSet<User> Users {get;set;} = default!;
 }

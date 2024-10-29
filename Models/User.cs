@@ -1,4 +1,4 @@
-
+namespace MinimalApiTodoApi.Models;
 
 public class User
 {
