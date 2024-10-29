@@ -358,3 +358,4 @@
 /home/bismillah/Documents/code/net/MinimalApiTodoApi/bin/Debug/net8.0/Swashbuckle.AspNetCore.Swagger.dll
 /home/bismillah/Documents/code/net/MinimalApiTodoApi/bin/Debug/net8.0/Swashbuckle.AspNetCore.SwaggerGen.dll
 /home/bismillah/Documents/code/net/MinimalApiTodoApi/bin/Debug/net8.0/Swashbuckle.AspNetCore.SwaggerUI.dll
+/home/bismillah/Documents/code/net/MinimalApiTodoApi/bin/Debug/net8.0/Microsoft.AspNetCore.OpenApi.dll

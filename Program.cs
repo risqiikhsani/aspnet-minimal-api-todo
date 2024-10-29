@@ -13,6 +13,8 @@ using MinimalApiTodoApi.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add configuration bindings
+// builder.Services.Configure<SecuritySettings>(builder.Configuration.GetSection("Security"));
 // Configure JSON logging to the console.
 // builder.Logging.AddJsonConsole();
 
@@ -26,19 +28,42 @@ builder.Services.AddTransient<AuthService>();
 
 
 builder.Services.AddCors();
-// Requires Microsoft.AspNetCore.Authentication.JwtBearer
-builder.Services.AddAuthentication("Bearer")
+
+// JWT Authentication setup
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            // ValidateLifetime = true,
-            // ValidateIssuerSigningKey = true,
-            // ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            // ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AuthSettings.PrivateKey))
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            
+            // Get valid audiences from configuration
+            ValidAudiences = builder.Configuration
+                .GetSection("Authentication:Schemes:Bearer:ValidAudiences")
+                .Get<string[]>(),
+                
+            // Get valid issuer from configuration
+            ValidIssuer = builder.Configuration
+                .GetValue<string>("Authentication:Schemes:Bearer:ValidIssuer") ??
+                throw new InvalidOperationException("Valid issuer is not configured"),
+                
+            // Get signing key from Security section
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(
+                    builder.Configuration["Security:JwtSettings:SecretKey"] ?? 
+                    throw new InvalidOperationException("JWT secret key is not configured")
+                )
+            ),
+            
+            // Recommended for production
+            ClockSkew = TimeSpan.Zero,
+            
+            // Optional: configure other parameters
+            RequireExpirationTime = true,
+            RequireSignedTokens = true
         };
     });
 
@@ -82,45 +107,32 @@ builder.Services.AddSwaggerGen(opt =>
 
     opt.AddSecurityDefinition("Bearer", securityScheme);
 
-    var securityRequirement = new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    };
+    // Only add the requirement globally if you want it for all routes
+    // Remove this line if you only want it on specific routes
+    // opt.AddSecurityRequirement(securityRequirement);
 
-    opt.AddSecurityRequirement(securityRequirement);
+    // var securityRequirement = new OpenApiSecurityRequirement
+    // {
+    //     {
+    //         new OpenApiSecurityScheme
+    //         {
+    //             Reference = new OpenApiReference
+    //             {
+    //                 Type = ReferenceType.SecurityScheme,
+    //                 Id = "Bearer"
+    //             }
+    //         },
+    //         new string[] {}
+    //     }
+    // };
+
+    // opt.AddSecurityRequirement(securityRequirement);
 
 });
 
 
 var app = builder.Build();
-OpenApiOperation AddBearerAuth(OpenApiOperation op)
-{
-    op.Security.Add(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "bearerAuth"
-                }
-            },
-            new string[] { }
-        }
-    });
-    return op;
-}
+
 
 
 app.UseCors(p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
@@ -134,18 +146,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.RegisterAuthEndpoints();
+app.RegisterTodoItemsEndpoints();
+app.Run();
 
 
-app.MapGet("/secret", (ClaimsPrincipal user) =>
-{
-    return $"Hello {user.Identity?.Name}.";
-}).RequireAuthorization();
 
-app.MapPost("/login", (AuthService authService, User user) =>
-{
-    var token = authService.GenerateToken(user);
-    return Results.Ok(new { Token = token });
-});
+
+
 
 //////////////////////////////////////////////////////////// STEP 1
 
@@ -381,5 +389,3 @@ app.MapPost("/login", (AuthService authService, User user) =>
 // }
 
 
-app.RegisterTodoItemsEndpoints();
-app.Run();

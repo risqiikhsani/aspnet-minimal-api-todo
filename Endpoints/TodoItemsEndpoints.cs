@@ -1,5 +1,6 @@
 using MinimalApiTodoApi.Models;
-
+using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Authorization;
 namespace MinimalApiTodoApi.Endpoints;
 
 public static class TodoItemsEndpoints
@@ -8,32 +9,32 @@ public static class TodoItemsEndpoints
     {
         RouteGroupBuilder todoItems = app.MapGroup("/todo-items");
         todoItems.MapGet("/",
-            async (ITodoService todoService) => { return TypedResults.Ok(await todoService.GetAllTodosAsync()); });
+             async (ITodoService todoService) => { return TypedResults.Ok(await todoService.GetAllTodosAsync()); }).WithName("GetTodos").WithTags("Todos");
         todoItems.MapGet("/complete",
             async (ITodoService todoService) => { return TypedResults.Ok(await todoService.GetCompleteTodosAsync()); }
-        );
+        ).WithName("GetCompletedTodos").WithTags("Todos");
         todoItems.MapGet("/{id}",
             async (int id, ITodoService todoService) =>
             {
                 return TypedResults.Ok(await todoService.GetTodoByIdAsync(id));
             }
-        );
-        todoItems.MapPost("/", async (TodoItemDTO todoItemDTO, ITodoService todoService) =>
+        ).WithName("GetTodosById").WithTags("Todos");
+        todoItems.MapPost("/", [Authorize] async (TodoItemDTO todoItemDTO, ITodoService todoService) =>
         {
             var createdTodo = await todoService.CreateTodoAsync(todoItemDTO);
             return TypedResults.Created($"/todo-items/{createdTodo.Id}", createdTodo);
-        }).RequireAuthorization();
+        }).WithName("CreateTodo").WithTags("Todos").WithOpenApi();
         todoItems.MapPut("/{id}",
-            async (int id, TodoItemDTO todoItemDTO, ITodoService todoService) =>
+            [Authorize] async (int id, TodoItemDTO todoItemDTO, ITodoService todoService) =>
             {
                 return TypedResults.Ok(await todoService.UpdateTodoAsync(id, todoItemDTO));
             }
-        );
+        ).WithName("UpdateTodo").WithTags("Todos");
         todoItems.MapDelete("/{id}",
-            async (int id, ITodoService todoService) =>
+            [Authorize] async (int id, ITodoService todoService) =>
             {
                 return TypedResults.Ok(await todoService.DeleteTodoAsync(id));
             }
-        );
+        ).WithName("DeleteTodo").WithTags("Todos");
     }
 }
